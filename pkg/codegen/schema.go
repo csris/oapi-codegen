@@ -37,6 +37,8 @@ type Schema struct {
 	// Can be overriden by the OutputOptions#DisableTypeAliasesForType field
 	DefineViaAlias bool
 
+	XmlProps *openapi3.XML // Properties to use when marshalling/unmarshalling XML
+
 	// The original OpenAPIv3 Schema.
 	OAPISchema *openapi3.Schema
 }
@@ -88,6 +90,7 @@ type Property struct {
 	ReadOnly      bool
 	WriteOnly     bool
 	NeedsFormTag  bool
+	XmlProps       *openapi3.XML
 	Extensions    map[string]interface{}
 	Deprecated    bool
 }
@@ -251,7 +254,6 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 	}
 
 	schema := sref.Value
-
 	// If Ref is set on the SchemaRef, it means that this type is actually a reference to
 	// another type. We're not de-referencing, so simply use the referenced type.
 	if IsGoTypeReference(sref.Ref) {
@@ -272,6 +274,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 	outSchema := Schema{
 		Description: schema.Description,
 		OAPISchema:  schema,
+		XmlProps:    schema.XML,
 	}
 
 	// AllOf is interesting, and useful. It's the union of a number of other
@@ -425,6 +428,7 @@ func GenerateGoSchema(sref *openapi3.SchemaRef, path []string) (Schema, error) {
 					Nullable:      p.Value.Nullable,
 					ReadOnly:      p.Value.ReadOnly,
 					WriteOnly:     p.Value.WriteOnly,
+					XmlProps:      p.Value.XML,
 					Extensions:    p.Value.Extensions,
 					Deprecated:    p.Value.Deprecated,
 				}
@@ -665,7 +669,7 @@ type FieldDescriptor struct {
 	IsRef    bool   // Is this schema a reference to predefined object?
 }
 
-// GenFieldsFromProperties produce corresponding field names with JSON annotations,
+// GenFieldsFromProperties produce corresponding field names with JSON+XML annotations,
 // given a list of schema descriptors
 func GenFieldsFromProperties(props []Property) []string {
 	var fields []string
@@ -724,6 +728,19 @@ func GenFieldsFromProperties(props []Property) []string {
 
 		fieldTags := make(map[string]string)
 
+		if p.XmlProps != nil {
+			if p.XmlProps.Name != "" {
+				fieldTags["xml"] = p.XmlProps.Name
+			} else {
+				fieldTags["xml"] = p.JsonFieldName
+			}
+			if p.XmlProps.Attribute {
+				fieldTags["xml"] += ",attr"
+			}
+		} else {
+			fieldTags["xml"] = p.JsonFieldName
+		}
+
 		if !omitEmpty {
 			fieldTags["json"] = p.JsonFieldName
 			if p.NeedsFormTag {
@@ -779,6 +796,7 @@ func GenStructFromSchema(schema Schema) string {
 	// Start out with struct {
 	objectParts := []string{"struct {"}
 	// Append all the field definitions
+	objectParts = appendXMLNameField(objectParts, schema)
 	objectParts = append(objectParts, GenFieldsFromProperties(schema.Properties)...)
 	// Close the struct
 	if schema.HasAdditionalProperties {
@@ -886,4 +904,15 @@ func generateUnion(outSchema *Schema, elements openapi3.SchemaRefs, discriminato
 	}
 
 	return nil
+}
+
+// Used when constructing a 'struct' type - adds a 'XMLName` field to control
+// the document name if required by the schema. If not required, appends
+// nothing.
+func appendXMLNameField(objectParts []string, schema Schema) []string {
+	if schema.XmlProps == nil || schema.XmlProps.Name == "" {
+		return objectParts
+	}
+	xmlNameField := fmt.Sprintf("XMLName xml.Name `xml:\"%s\"`", schema.XmlProps.Name)
+	return append(objectParts, xmlNameField)
 }
