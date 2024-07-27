@@ -15,7 +15,7 @@ import (
 
 // ClientType defines model for ClientType.
 type ClientType struct {
-	Name string `json:"name"`
+	Name string `json:"name" xml:"name"`
 }
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
@@ -252,7 +252,7 @@ type UpdateClientResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON400      *struct {
-		Code string `json:"code"`
+		Code string `json:"code" xml:"code"`
 	}
 }
 
@@ -332,7 +332,7 @@ func ParseUpdateClientResponse(rsp *http.Response) (*UpdateClientResponse, error
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest struct {
-			Code string `json:"code"`
+			Code string `json:"code" xml:"code"`
 		}
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
