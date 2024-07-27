@@ -5,13 +5,13 @@ package xdeprecatedreason
 
 // Client defines model for Client.
 type Client struct {
-	Id   *float32 `json:"id,omitempty"`
-	Name string   `json:"name"`
+	Id   *float32 `json:"id,omitempty" xml:"id"`
+	Name string   `json:"name" xml:"name"`
 }
 
 // ClientWithExtension defines model for ClientWithExtension.
 type ClientWithExtension struct {
-	Id *float32 `json:"id,omitempty"`
+	Id *float32 `json:"id,omitempty" xml:"id"`
 	// Deprecated: Don't use because reasons
-	Name string `json:"name"`
+	Name string `json:"name" xml:"name"`
 }

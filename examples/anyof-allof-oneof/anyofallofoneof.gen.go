@@ -11,7 +11,7 @@ import (
 
 // Client defines model for Client.
 type Client struct {
-	Name string `json:"name"`
+	Name string `json:"name" xml:"name"`
 }
 
 // ClientAndMaybeIdentity defines model for ClientAndMaybeIdentity.
@@ -26,20 +26,20 @@ type ClientOrIdentity struct {
 
 // ClientWithId defines model for ClientWithId.
 type ClientWithId struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
+	Id   int    `json:"id" xml:"id"`
+	Name string `json:"name" xml:"name"`
 }
 
 // Identity defines model for Identity.
 type Identity struct {
-	Issuer string `json:"issuer"`
+	Issuer string `json:"issuer" xml:"issuer"`
 }
 
 // IdentityWithDuplicateField defines model for IdentityWithDuplicateField.
 type IdentityWithDuplicateField struct {
 	Issuer struct {
-		Name string `json:"name"`
-	} `json:"issuer"`
+		Name string `json:"name" xml:"name"`
+	} `json:"issuer" xml:"issuer"`
 }
 
 // AsClient returns the union data inside the ClientAndMaybeIdentity as a Client
